@@ -185,44 +185,6 @@ def is64bitProc(process_handle):
 		print('Failed to get process version info!')
 	return not bool(is64.value)
 
-def enum_pids():
-
-	max_array = c_ulong * 4096 # define long array to capture all the processes
-	pProcessIds = max_array() # array to store the list of processes
-	pBytesReturned = c_ulong() # the number of bytes returned in the array
-	#EnumProcess
-	res = EnumProcesses(
-		ctypes.byref(pProcessIds),
-		ctypes.sizeof(pProcessIds),
-		ctypes.byref(pBytesReturned)
-	)
-	if res == 0:
-		return []
-
-	# get the number of returned processes
-	nReturned = int(pBytesReturned.value/ctypes.sizeof(c_ulong()))
-	return [i for i in pProcessIds[:nReturned]]
-
-def enum_process_names():
-	pid_to_name = {}
-
-	for pid in enum_pids():
-		pid_to_name[pid] = 'Not found'
-		process_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, pid)
-		if process_handle is None:
-			print('[Enum Processes]Failed to open process PID: %d Reason: %s ' % (pid))
-			continue
-
-		image_name = (ctypes.c_char*MAX_PATH)()
-		max_path = DWORD(4096)
-		#res = GetProcessImageFileName(process_handle, image_name, MAX_PATH)
-		res = QueryFullProcessImageName(process_handle, 0 ,image_name, ctypes.byref(max_path))
-		if res == 0:
-			print('[Enum Proceses]Failed GetProcessImageFileName on PID: %d Reason: %s ' % (pid))
-			continue
-
-		pid_to_name[pid] = image_name.value.decode()
-	return pid_to_name
 
 def create_dump(pid, output_filename, mindumptype, debug=False):
 	if debug:
