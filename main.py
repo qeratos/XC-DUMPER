@@ -1,14 +1,14 @@
-import os, sys, ctypes, enum, platform, struct, re, psutil
+import sys, ctypes, enum, platform, struct, re, psutil
 from termcolor import colored
 
 from ctypes.wintypes import HANDLE, BOOL, DWORD, HWND, HINSTANCE, HKEY, LPVOID, LPWSTR, PBOOL
-from ctypes import c_ulong, c_char_p, c_int, c_void_p, windll
+from ctypes import c_ulong, c_char_p, c_int, c_void_p, WinError, get_last_error, windll
 
 from minidump.utils.privileges import enable_debug_privilege
 
 x_remove = re.compile(r'\\x')
 
-lib_funcs = ['QWidget', 'background', 'QScrollArea', 'QScrollBar', 'QObject*', 'QGroupBox', 'QProgressBar', 'background-color', 'font-weight', 'border-radius', 'padding', 'QToolButton', 'qlineargradient', 'Segoe UI']
+lib_funcs = ['QWidget', 'background', 'QScrollArea', 'margin-right', 'QPushButton', 'QTableView','margin-left', 'QScrollBar', 'QObject*', 'QGroupBox', 'QProgressBar', 'background-color', 'font-weight', 'border-radius', 'padding', 'QToolButton', 'qlineargradient', 'Segoe UI']
 
 if platform.system() != 'Windows':
 	raise Exception('This script will ovbiously only work on Windows')
@@ -183,6 +183,7 @@ def is64bitProc(process_handle):
 	res = IsWow64Process(process_handle, ctypes.byref(is64))
 	if res == 0:
 		print('Failed to get process version info!')
+		WinError(get_last_error())
 	return not bool(is64.value)
 
 
@@ -197,6 +198,7 @@ def create_dump(pid, output_filename, mindumptype, debug=False):
 	process_handle = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
 	if process_handle is None:
 		print('Failed to open process PID: %d' % pid)
+		print(WinError(get_last_error()))
 		return
 	print('Process handle: 0x%04x' % process_handle)
 	is64 = is64bitProc(process_handle)
@@ -207,11 +209,13 @@ def create_dump(pid, output_filename, mindumptype, debug=False):
 	file_handle = CreateFile(output_filename, FILE_GENERIC_READ | FILE_GENERIC_WRITE, 0, None,  FILE_CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, None)
 	if file_handle == -1:
 		print('Failed to create file')
+		print(WinError(get_last_error()))
 		return
 	print('Dumping process to file')
 	res = MiniDumpWriteDump(process_handle, pid, file_handle, mindumptype, 0,0,0)
 	if not bool(res):
 		print('Failed to dump process to file')
+		print(WinError(get_last_error()))
 	print('Dump file created succsessfully')
 	CloseHandle(file_handle)
 	CloseHandle(process_handle)
@@ -231,7 +235,7 @@ def help():
  \$$   \$$  \$$$$$$         \$$$$$$$   \$$$$$$  \$$      \$$ \$$       \$$$$$$$$ \$$   \$$
 	
 										by Qeratos""", 'green'))
-	print("""------------------------------------------------------------------------------------------
+	print(r"""------------------------------------------------------------------------------------------
 | HELP:
 ------------------------------------------------------------------------------------------
 -h 

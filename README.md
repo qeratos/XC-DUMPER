@@ -1,5 +1,7 @@
 # XC-DUMPER
-## POC that we can dump passwords from unlocked KeepassXC [from process memory]
+### POC that we can dump passwords from unlocked KeepassXC [from process memory]
+***
+## <u>__`!MUST RUN UNDER ADMIN!`__</u>
 
 ## INFO:
 1) Supports only Windows
